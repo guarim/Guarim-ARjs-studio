@@ -11,7 +11,33 @@
     
     <style>
         body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .header-app { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem 0; margin-bottom: 2rem; }
+        
+        /* HEADER STYLES UPDATED */
+        .header-app { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            padding: 2rem 0; 
+            margin-bottom: 2rem; 
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px; /* Espace entre les images et le texte */
+            flex-wrap: wrap; /* Permet de passer à la ligne sur mobile */
+        }
+
+        .header-img {
+            max-height: 100px; /* Hauteur max des logos */
+            width: auto;
+            background: rgba(255,255,255,0.2); /* Fond léger si transparent */
+            padding: 5px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+
+        /* Autres styles */
         .card-slot { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s; margin-bottom: 1.5rem; }
         .card-slot:hover { transform: translateY(-5px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
         .step-badge { background: #764ba2; color: white; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px; font-weight: bold; }
@@ -22,9 +48,17 @@
 <body>
 
     <div class="header-app text-center">
-        <div class="container">
-            <h1><i class="fas fa-cube"></i> AR.js Generator</h1>
-            <p class="lead">Créez votre expérience de Réalité Augmentée en quelques clics.</p>
+        <div class="container header-content">
+            
+            <img src="https://via.placeholder.com/150x100/ffffff/764ba2?text=LOGO+1" alt="Logo Gauche" class="header-img">
+            
+            <div>
+                <h1 class="mb-0"><i class="fas fa-cube"></i> AR.js Generator</h1>
+                <p class="lead mb-0">Créez votre expérience de Réalité Augmentée</p>
+            </div>
+
+            <img src="https://via.placeholder.com/150x100/ffffff/764ba2?text=IMAGE+2" alt="Image Droite" class="header-img">
+
         </div>
     </div>
 
@@ -55,7 +89,6 @@
         const slotsContainer = document.getElementById('slotsContainer');
 
         // --- INIT UI ---
-        // Génère les 4 slots dynamiquement
         for(let i = 1; i <= MAX_SLOTS; i++) {
             const html = `
                 <div class="col-md-6">
@@ -65,7 +98,7 @@
                         <div class="mb-3">
                             <label class="form-label fw-bold">1. Image du Marker (JPG/PNG)</label>
                             <input type="file" class="form-control" id="markerImg-${i}" accept="image/png, image/jpeg" onchange="previewImage(this, 'prev-marker-${i}')">
-                            <div class="form-text">Image contrastée, simple, sans transparence (ex: Logo noir sur fond blanc).</div>
+                            <div class="form-text">Image contrastée, simple, sans transparence.</div>
                             <img id="prev-marker-${i}" class="preview-thumb" />
                         </div>
 
@@ -108,7 +141,6 @@
         }
 
         // --- CORE LOGIC ---
-
         async function generateProject() {
             const zip = new JSZip();
             const assetsFolder = zip.folder("assets");
@@ -124,36 +156,26 @@
                     const contentInput = document.getElementById(`contentFile-${i}`);
                     const contentType = document.getElementById(`contentType-${i}`).value;
 
-                    // On ne traite que si les deux fichiers sont présents
                     if (markerInput.files.length > 0 && contentInput.files.length > 0) {
                         hasData = true;
                         
-                        // 1. Traitement du Marker
                         const markerFile = markerInput.files[0];
                         const markerName = `marker_${i}`;
-                        
-                        // Sauvegarde de l'image originale du marker
                         assetsFolder.file(`${markerName}.png`, markerFile);
                         
-                        // Génération du fichier .patt (Logique simplifiée pour client-side)
                         const pattData = await generatePatternData(markerFile);
                         assetsFolder.file(`${markerName}.patt`, pattData);
 
-                        // 2. Traitement du Contenu
                         const contentFile = contentInput.files[0];
                         const contentExt = contentFile.name.split('.').pop();
                         const contentName = `content_${i}.${contentExt}`;
                         assetsFolder.file(contentName, contentFile);
 
-                        // 3. Construction HTML
-                        // Ajout aux assets (preload pour vidéo/modèle)
                         let entityHtml = "";
-                        
                         if (contentType === 'image') {
                             entityHtml = `<a-image src="assets/${contentName}" position="0 0.5 0" rotation="-90 0 0" scale="1 1 1"></a-image>`;
                         } else if (contentType === 'video') {
                             assetsHtmlComponents += `<video id="vid${i}" loop="true" crossorigin="anonymous" src="assets/${contentName}"></video>`;
-                            // Note: Video handling requires user interaction logic in script
                             entityHtml = `<a-video src="#vid${i}" position="0 0.5 0" rotation="-90 0 0" width="1" height="1"></a-video>`;
                         } else if (contentType === 'model') {
                             entityHtml = `<a-entity gltf-model="url(assets/${contentName})" scale="0.5 0.5 0.5" position="0 0 0" rotation="0 0 0" animation="property: rotation; to: 0 360 0; loop: true; dur: 10000"></a-entity>`;
@@ -162,8 +184,7 @@
                         markerHtmlComponents += `
         <a-marker type="pattern" url="assets/${markerName}.patt">
             ${entityHtml}
-        </a-marker>
-                        `;
+        </a-marker>`;
                     }
                 }
 
@@ -173,23 +194,20 @@
                     return;
                 }
 
-                // 4. Génération de l'Index.html
                 const indexHtml = generateIndexHTML(markerHtmlComponents, assetsHtmlComponents);
                 zip.file("index.html", indexHtml);
 
-                // 5. Téléchargement
                 const content = await zip.generateAsync({type:"blob"});
                 saveAs(content, "ar-project.zip");
 
             } catch (err) {
                 console.error(err);
-                alert("Erreur lors de la génération : " + err.message);
+                alert("Erreur : " + err.message);
             } finally {
                 document.getElementById('loadingOverlay').style.display = 'none';
             }
         }
 
-        // --- PATTERN GENERATOR ENGINE (Simplified ARToolKit logic) ---
         function generatePatternData(imageFile) {
             return new Promise((resolve, reject) => {
                 const img = new Image();
@@ -197,34 +215,17 @@
                 img.onload = () => {
                     const canvas = document.getElementById('hiddenCanvas');
                     const context = canvas.getContext('2d');
-                    // ARToolKit pattern is usually 16x16 resolution for the internal matrix
                     canvas.width = 16;
                     canvas.height = 16;
-                    
-                    // Draw resized image
                     context.drawImage(img, 0, 0, 16, 16);
-                    
-                    // Get image data
                     const imageData = context.getImageData(0, 0, 16, 16);
                     const data = imageData.data;
-                    
-                    // Convert to ARToolKit pattern text format
                     let pattContent = "";
                     for (let y = 0; y < 16; y++) {
                         for (let x = 0; x < 16; x++) {
-                            // Convert RGB to grayscale (simple average)
                             const offset = (y * 16 + x) * 4;
-                            const r = data[offset];
-                            const g = data[offset + 1];
-                            const b = data[offset + 2];
-                            const avg = Math.floor((r + g + b) / 3);
-                            
-                            // Format for .patt file (3 color channels usually required for simple parsers, or just one)
-                            // AR.js/ARToolKit usually expects clear text integers
-                            // This is a simplified output compatible with basic parsers
-                            pattContent += String(avg).padStart(3, " ") + " ";
-                            pattContent += String(avg).padStart(3, " ") + " ";
-                            pattContent += String(avg).padStart(3, " ") + "\n";
+                            const avg = Math.floor((data[offset] + data[offset + 1] + data[offset + 2]) / 3);
+                            pattContent += String(avg).padStart(3, " ") + " " + String(avg).padStart(3, " ") + " " + String(avg).padStart(3, " ") + "\n";
                         }
                     }
                     resolve(pattContent);
@@ -233,7 +234,6 @@
             });
         }
 
-        // --- HTML TEMPLATE GENERATOR ---
         function generateIndexHTML(markers, assets) {
             return `<!DOCTYPE html>
 <html>
@@ -249,29 +249,18 @@
     </style>
 </head>
 <body>
-    
     <div class="ar-ui">
         <button class="btn" onclick="playVideos()">Activer le Son / Vidéo</button>
     </div>
-
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
-        
-        <a-assets>
-            ${assets}
-        </a-assets>
-
+        <a-assets>${assets}</a-assets>
         ${markers}
-
         <a-entity camera></a-entity>
     </a-scene>
-
     <script>
         function playVideos() {
             const vids = document.querySelectorAll('video');
-            vids.forEach(v => {
-                v.play().catch(e => console.log("Click needed for autoplay"));
-                v.muted = false;
-            });
+            vids.forEach(v => { v.play().catch(e => console.log("Click needed")); v.muted = false; });
             document.querySelector('.ar-ui').style.display = 'none';
         }
     <\/script>
